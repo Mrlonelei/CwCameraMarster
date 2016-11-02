@@ -45,3 +45,27 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.rar
+*.dll
+*.exe
+*.ilk
+x64/Debug/CwCameraMarster.lib
+*.pdb
+*.exp
+*.dcf
+x64/Debug/CameraConfig.ini
+x64/Debug/Image1.bmp
+x64/Debug/Image2.bmp
+x64/Release old/CwCameraMarster.lib
+*.ipch
+CwCameraMarster.opensdf
+*.sdf
+CwCameraMarster.sdf
+串口/CwSerialPort.cpp
+串口/CwSerialPort.h
+*.bmp
+x64/Release old/无标题.png
+x64/Release/CwCameraMarster.lib
+x64/Release/CwCameraMaster/CwCameraMarster.lib
+*.log
+CwCameraMarster/x64/Debug/RCa11204
