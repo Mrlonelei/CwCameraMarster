@@ -12,6 +12,9 @@
 #include "CwCameraFactory.h"
 #include "CwSerialPort.h"
 #include "CwBirgerMount.h"
+#include "EnumSerial.h"
+#include "CwCameraViewWorksCrl.h"
+#include <Winspool.h>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -34,6 +37,7 @@ DWORD WINAPI LiveShowThread(LPVOID pParam)
 	int imgHeight = 4384;
 	int imgWidth = 6592;
 	uchar* imgBuffer = new uchar[imgHeight*imgWidth];
+	int nFlag = 0;
 	while (true)
 	{
 		while (CWCAMERAMASTER_SHOWIMG_LIVE == pOwner->GetShowImgMode())
@@ -53,15 +57,18 @@ DWORD WINAPI LiveShowThread(LPVOID pParam)
 			pOwner->m_semExitLiveThreadFlag.Lock();			//20160907 Mrl.wy 线程退出标志
 			if (pOwner->m_nExitLiveThreadFlag)
 			{
+				nFlag = 1;
 				pOwner->m_semExitLiveThreadFlag.Unlock();
 				break;
 			}
 			pOwner->m_semExitLiveThreadFlag.Unlock();
 		}
-
+		if (nFlag)
+			break;
 		pOwner->m_semExitLiveThreadFlag.Lock();
 		if (pOwner->m_nExitLiveThreadFlag)
 		{
+			pOwner->m_nExitLiveThreadFlag = 0;
 			pOwner->m_semExitLiveThreadFlag.Unlock();
 			break;
 		}
@@ -187,25 +194,52 @@ BOOL CCwCameraMarsterDlg::OnInitDialog()
 
 	
 	this->m_Camera = this->m_CameraFactory.GetItem(CWCAMERATYPE_SVS);
+
 	//m_Camera.SetOwner(this, GrabCallBack);
 	this->m_Camera->SetFilePath("Camera.dcf");
 	this->m_nIsCameraOnline = 0;
 #if CAMERA_TEST
-	//this->m_nIsCameraOnline = m_Camera->InitCamera(this, 0, 0);
+	this->m_nIsCameraOnline = m_Camera->InitCamera(this, 0, 0);
 #endif
+	if (this->birCon.InitConnect(this, ""))
+	{
+		TRACE("birger mount ok");
+	}
+	else
+	{
+		TRACE("birger mount ng");
+		this->m_nIsCameraOnline = 0;
+	}
 	
+
 	m_hicOnLineIcon = AfxGetApp()->LoadIcon(IDI_ICON_ONLINE);
 	m_hicOffLineIcon = AfxGetApp()->LoadIcon(IDI_ICON_OFFLINE);
 	SetCameraOnlineAble();
+	int nMaxAp(0), nMinAp(0);
+	CString strOut;
 	if (this->m_nIsCameraOnline)
 	{
 		int nGetVal(0);
-		this->m_Camera->GetFocus(nGetVal);
+		Sleep(100);
+		this->birCon.InitAperture();
+		Sleep(100);
+		this->birCon.GetApertureRange(nMinAp, nMaxAp);
+		strOut.Format("Minap:	%d	MaxAp:	%d", nMinAp, nMaxAp);
+		OutputDebugString(strOut);
+		Sleep(100);
+		this->birCon.LearnFocus();
+		Sleep(100);
+		this->birCon.GetFocus(nGetVal);
+		
+		//this->m_Camera->GetFocus(nGetVal);
 		this->m_nFocus = nGetVal;
-		this->m_Camera->GetAperture(nGetVal);
+		nGetVal = 0;
+		Sleep(100);
+		this->birCon.GetAperture(nGetVal);
+		//this->m_Camera->GetAperture(nGetVal);
 		this->m_nAperture = nGetVal;
-		this->m_Camera->GetShutter(nGetVal);
-		this->m_nShutter = nGetVal;
+		/*this->m_Camera->GetShutter(nGetVal);
+		this->m_nShutter = nGetVal;*/
 		SetCameraOnlineAble();
 	}
 	else
@@ -353,8 +387,28 @@ void CCwCameraMarsterDlg::OnCancel()
 	this->m_semExitLiveThreadFlag.Lock();
 	this->m_nExitLiveThreadFlag = 1;
 	this->m_semExitLiveThreadFlag.Unlock();
+	Sleep(300);
+	this->m_semExitLiveThreadFlag.Lock();
+	if (this->m_nExitLiveThreadFlag == 0)
+		this->DestroyWindow();
+	this->m_semExitLiveThreadFlag.Unlock();
 	
-	this->DestroyWindow();
+}
+
+void CCwCameraMarsterDlg::OnOK()
+{
+	this->m_Camera->Freeze();
+	this->m_Camera->Destory();
+
+	this->m_semExitLiveThreadFlag.Lock();
+	this->m_nExitLiveThreadFlag = 1;
+	this->m_semExitLiveThreadFlag.Unlock();
+	Sleep(300);
+	this->m_semExitLiveThreadFlag.Lock();
+	if (this->m_nExitLiveThreadFlag == 0)
+		this->DestroyWindow();
+	this->m_semExitLiveThreadFlag.Unlock();
+
 }
 //void CCwCameraMarsterDlg::OnDestroy()
 //{
@@ -668,7 +722,8 @@ void CCwCameraMarsterDlg::OnBnClickedButtonSetFocus()
 	this->m_nFocus = atoi(strFocus);
 	if (this->m_nIsCameraOnline)
 	{
-		this->m_Camera->SetFocus(this->m_nFocus);
+		//this->m_Camera->SetFocus(this->m_nFocus);
+		this->birCon.SetFocus(this->m_nFocus);
 	}
 	else
 	{
@@ -685,7 +740,9 @@ void CCwCameraMarsterDlg::OnBnClickedButtonSetAperture()
 	this->m_nAperture = atoi(strAperture);
 	if (this->m_nIsCameraOnline)
 	{
-		this->m_Camera->SetAperture(this->m_nAperture);
+		//this->m_Camera->SetAperture(this->m_nAperture);
+		this->birCon.SetAperture(this->m_nAperture);
+			//AfxMessageBox("Aperture error ");
 	}
 	else
 	{
@@ -742,10 +799,24 @@ BOOL CCwCameraMarsterDlg::PreTranslateMessage(MSG* pMsg)
 			}
 		}
 		break;
+	case WM_LBUTTONUP:
+		if (picRect.PtInRect(MovePoint));
+		{
+			if (CWCAMERAMASTER_ZOOMSTATUS_IN == this->m_nZoomStatus || CWCAMERAMASTER_ZOOMSTATUS_OUT == this->m_nZoomStatus)
+			{
+				this->m_rectZoomROI.x = (MovePoint.x - picRect.left)*this->m_fXScale;
+			}
+		}
 	case WM_LIVESHOWIMAGE:
 		OnLiveShowImage(pMsg->hwnd,pMsg->lParam);
 		break;
+	case WM_HSCROLL:
+		//CScrollBar* pHScroll = (CScrollBar*)GetDlgItem(IDC_SCROLLBAR_MAINIMGH);
 
+		break;
+	case WM_VSCROLL:
+
+		break;
 	default:
 		break;
 	}
@@ -753,7 +824,38 @@ BOOL CCwCameraMarsterDlg::PreTranslateMessage(MSG* pMsg)
 
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
+void CCwCameraMarsterDlg::OnHSBProcess(UINT nSBCode, UINT nPos, CScrollBar* pSB)
+{
+	int nCurrentPos, nMin, nMax;
+	nCurrentPos = pSB->GetScrollPos();
+	pSB->GetScrollRange(&nMin, &nMax);
 
+	switch (nSBCode)
+	{
+	case SB_LINELEFT:
+		nCurrentPos = nCurrentPos - (nMax - nMin) / 10;
+		break;
+	case SB_LINERIGHT:
+		nCurrentPos = nCurrentPos + (nMax - nMin) / 10;
+		break;
+	case SB_THUMBTRACK:
+		nCurrentPos = nPos;
+		break;
+	default:
+		break;
+	}
+	if (nCurrentPos < 0)
+		nCurrentPos = 0;
+	if (nCurrentPos > nMax)
+		nCurrentPos = nMax;
+
+	pSB->SetScrollPos(nCurrentPos);
+
+
+
+
+	return;
+}
 void CCwCameraMarsterDlg::OnMouseMoveSrcImg(UINT nID, LPARAM lParam)
 {
 	//AfxMessageBox("opoos!");
@@ -1003,7 +1105,7 @@ void CCwCameraMarsterDlg::SetCameraOnlineAble()
 	cbEnable = (CButton*)GetDlgItem(IDC_BUTTON_SET_FOCUS);
 	cbEnable->EnableWindow(TRUE);
 	cbEnable = (CButton*)GetDlgItem(IDC_BUTTON_SET_EXPORSURE);
-	cbEnable->EnableWindow(TRUE);
+	cbEnable->EnableWindow(FALSE);
 }
 
 void CCwCameraMarsterDlg::SetGrabContinues()
@@ -1123,19 +1225,27 @@ void CCwCameraMarsterDlg::OnBnClickedButtonPortsearch()
 
 	//	RegCloseKey(hKey);
 	//}
-
 	
-	if (this->birCon.InitConnect(this, ""))
+	/*if (this->birCon.InitConnect(this, ""))
 	{
-		TRACE("birger mount ok");
-		int nFo(0);
-		this->birCon.GetFocus(nFo);
+	TRACE("birger mount ok");
+	int nFo(0);
+	this->birCon.GetFocus(nFo);
 
 	}
 	else
-		TRACE("birger mount ng");
+	TRACE("birger mount ng");*/
 
+	CCwCameraViewWorksCrl camCon;
 
-
+	if (camCon.initCameraViewWorksCrl(this, ""))
+	{
+		TRACE("viewworks camera ok");
+		camCon.ClosePort();
+	}
+	else
+	{
+		TRACE("viewworks camera ng");
+	}
 
 }

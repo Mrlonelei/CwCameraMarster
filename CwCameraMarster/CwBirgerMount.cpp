@@ -72,12 +72,16 @@ int CwBirgerMount::InitConnect(CWnd* pOwner,CString strComName)
 		if (!this->m_conLensPort.OpenSerialPort())
 			continue;
 		strCMD.Format("%s", chBirgerCmd[FUNC_CLEAR_ALL_LINK]);
+		OutputDebugString(strCMD);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
+		
 		strCMD.Format("%s", chBirgerCmd[FUNC_SET_NEWPROTOCOL]);
+		OutputDebugString(strCMD);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
-		this->m_conLensPort.ReceiveData(strRecieve, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(strRecieve, BIRGERMOUNTCMDLENGTH,500);
+		OutputDebugString(strRecieve);
 		TRACE(strRecieve);
 		/*int res = this->m_conLens.InitPort(pOwner,8,0,115200,'N',8,0);
 		if (res)
@@ -93,15 +97,16 @@ int CwBirgerMount::InitConnect(CWnd* pOwner,CString strComName)
 			nIsConnected = 1;
 			break;
 		}
+		this->m_conLensPort.CloseSerialPort();
 		memset(strRecieve, 0, 256);
 	}
-	if (nIsConnected)
-	{
-		this->LearnFocus(0);
-		this->DistanceStop();
+	//if (nIsConnected)
+	//{
+	//	this->LearnFocus(0);
+	////	this->DistanceStop();
 
-	}
-	
+	//}
+	//
 
 	
 	//20161021 Mrl.wy ±éÀú¶Ë¿Ú£¬²éÕÒbirger mount
@@ -155,11 +160,13 @@ int CwBirgerMount::GetFocus(int &nFocus)
 	if (nIsConnected)
 	{
 		strCMD.Format("%s", chBirgerCmd[GET_FOCUS_POSITION]);
+		OutputDebugString(strCMD);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,500);
 		nFocus = atoi(chReceive);
+		OutputDebugString(chReceive);
 		return nIsConnected;
 	}
 	return nIsConnected;
@@ -174,11 +181,13 @@ int CwBirgerMount::LearnFocus(int nType)
 	if (nIsConnected)
 	{
 		strCMD.Format("%s", chBirgerCmd[FUNC_LEARN_FOCUS]);
+		OutputDebugString(strCMD);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
 		TRACE(chReceive);
+		OutputDebugString(chReceive);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);		
 	}
 	return nIsConnected;
@@ -196,7 +205,7 @@ int CwBirgerMount::SetFocus(const int& nFocus)
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
 		TRACE(chReceive);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);
 	}
@@ -227,7 +236,7 @@ int CwBirgerMount::SetFocusEH(const int& nFocus)
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
 		return atoi(chReceive);
 	}
 	return -20000;
@@ -241,10 +250,12 @@ int CwBirgerMount::InitAperture()
 	if (nIsConnected)
 	{
 		strCMD.Format(chBirgerCmd[FUNC_INIT_APERTURE]);
+		OutputDebugString(strCMD);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strlen(chBirgerCmd[FUNC_INIT_APERTURE]));
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
+		OutputDebugString(chReceive);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);
 	}
 	return nIsConnected;
@@ -257,11 +268,11 @@ int CwBirgerMount::FullCloseAperture()
 	memset(chReceive, 0, sizeof(char)*BIRGERMOUNTCMDLENGTH);
 	if (nIsConnected)
 	{
-		strCMD.Format(chBirgerCmd[SET_APERTURE_FULLOPEN]);
+		strCMD.Format(chBirgerCmd[SET_APERTURE_FULLCLOSE]);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);
 	}
 	return nIsConnected;
@@ -278,7 +289,8 @@ int CwBirgerMount::FullOpenAperture()
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
+		OutputDebugString(chReceive);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);
 	}
 	return nIsConnected;
@@ -292,23 +304,34 @@ int CwBirgerMount::GetAperture(int &nAper)
 	if (nIsConnected)
 	{
 		strCMD.Format(chBirgerCmd[GET_APERTURE_POSITION]);
+		OutputDebugString(strCMD);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
-		return atoi(chReceive);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
+		OutputDebugString(chReceive);
+		CString strTmp;
+		strTmp.Format("%s", chReceive);
+		int DotPos = strTmp.Find(",");
+		OutputDebugString(strTmp.Mid(0, DotPos));
+		
+		nAper = atoi(strTmp.Mid(0,DotPos));
+		return nIsConnected;
 	}
 	return nIsConnected;
 }
 
 int CwBirgerMount::GetApertureRange(int &nMin, int& nMax)
 {
+	int nMaxT,nMinT;
 	this->FullCloseAperture();
-	this->GetAperture(nMax);
+	this->GetAperture(nMaxT);
 	this->FullOpenAperture();
-	this->GetAperture(nMin);
-	this->m_nMaxAperture = nMax;
-	this->m_nMinAperture = nMin;
+	this->GetAperture(nMinT);
+	this->m_nMaxAperture = nMaxT;
+	this->m_nMinAperture = nMinT;
+	nMin = nMinT;
+	nMax = nMaxT;
 	return 0;
 }
 
@@ -323,11 +346,11 @@ int CwBirgerMount::SetAperture(const int& nAper)
 	memset(chReceive, 0, sizeof(char)*BIRGERMOUNTCMDLENGTH);
 	if (nIsConnected)
 	{
-		strCMD.Format(chBirgerCmd[SET_FOCUS_ABOSLUTE_POSITION],nAper);
+		strCMD.Format(chBirgerCmd[SET_APERTURE_ABSOLUTE_POSITION],nAper);
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);
 	}
 	return nIsConnected;
@@ -345,7 +368,7 @@ int CwBirgerMount::DistanceStop()
 		this->m_conLensPort.SendData(strCMD.GetBuffer(), strCMD.GetLength());
 		strCMD.ReleaseBuffer();
 		Sleep(20);
-		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH);
+		this->m_conLensPort.ReceiveData(chReceive, BIRGERMOUNTCMDLENGTH,-1);
 		TRACE(chReceive);
 		return Find_string(chReceive, chBirgerCmdReceive[BIRGERCMD_DONE]);
 	}

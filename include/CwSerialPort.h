@@ -81,7 +81,7 @@ public:
 * 输出参数：-。
 * 返 回 值：数据能否成功接收。
 */
-	bool ReceiveData(char *dataBuffer, size_t dataLength); 
+	bool ReceiveData(char *dataBuffer, size_t dataLength,int TimeOut); 
 
 /*
 * 函数介绍：该函数完成串口波特率，校验位，数据位，停止位等相关参数的配置。

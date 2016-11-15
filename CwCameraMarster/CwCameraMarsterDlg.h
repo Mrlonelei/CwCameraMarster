@@ -85,6 +85,7 @@ public:
 	CCwCameraFactory m_CameraFactory;
 	CCwCamerabase* m_Camera;
 	CwBirgerMount birCon;
+	
 
 	CSemaphore m_semExitLiveThreadFlag;
 	int m_nExitLiveThreadFlag;
@@ -103,7 +104,7 @@ public:
 	//afx_msg void OnDestroy();
 	//afx_msg void OnClose();
 	afx_msg void OnCancel();
-
+	afx_msg void OnOK();
 	int GetShowImgMode();
 
 	int PaintOnScreen(uchar* pImgBuf,int imgWidth, int imgHeight);
@@ -131,4 +132,6 @@ public:
 	afx_msg void OnBnClickedButtonCamreareload();
 	afx_msg void OnBnClickedButtonMainimgzoomin();
 	afx_msg void OnBnClickedButtonPortsearch();
+	afx_msg void OnHSBProcess(UINT nSBCode, UINT nPos, CScrollBar* pSB);
+	afx_msg void OnVSBProcess(UINT nSBCode, UINT nPos, CScrollBar* pSB);
 };

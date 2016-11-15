@@ -48,7 +48,7 @@ bool CwSerialPort::OpenSerialPort(void)
 
 	if (!SetUpSerialPort(rate,stopbit,fparity,bytesize))
 	{
-		printf("setup serialport wrong!\n");
+		TRACE("setup serialport wrong!\n");
 		return true;
 	}
 
@@ -167,19 +167,37 @@ bool CwSerialPort::SendData(char *dataBuffer, size_t dataLength)
 }
 
 //接收数据
-bool CwSerialPort::ReceiveData(char *dataBuffer, size_t dataLength)
+bool CwSerialPort::ReceiveData(char *dataBuffer, size_t dataLength,int TimeOut)
 {
 	BOOL bRead = TRUE;
 	BOOL bResult = TRUE;
 	DWORD dwError = 0;
 	DWORD BytesRead = 0;
 	char *RXBuff = dataBuffer;
+	int64 TimeOutStart = clock();
+	CString strOut;
+
 	for (;;)
 	{
 		Sleep(20);
+		/*strOut.Format("connecting %d", clock() - TimeOutStart);
+		TRACE(strOut);*/
+		if (TimeOut>0)
+		{
+			if (clock() - TimeOutStart > TimeOut)
+			{
+				strOut.Format("connecting %d", clock() - TimeOutStart);
+				TRACE(strOut);
+				break;
+			}
+		}
+			
 		bResult = ClearCommError(hComm, &dwError, &comstat);
+		TRACE("ClearCommError over");
 		if (comstat.cbInQue == 0)
 			continue;
+		strOut.Format("cbInQue:%d", comstat.cbInQue);
+		TRACE(strOut);
 		if (bRead)
 		{
 			bResult = ReadFile(hComm,      // Handle to COMM port

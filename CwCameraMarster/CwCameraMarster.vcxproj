@@ -117,7 +117,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>CwCamera.lib;opencv_world300d.lib;CwBaseProcess.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>CwCamera.lib;opencv_world300d.lib;CwBaseProcess.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -170,7 +170,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>CwCamera.lib;opencv_world300.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>CwCamera.lib;opencv_world300.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
@@ -190,6 +190,7 @@
     <ClInclude Include="..\include\CwCamera.h" />
     <ClInclude Include="CwCameraMarster.h" />
     <ClInclude Include="CwCameraMarsterDlg.h" />
+    <ClInclude Include="CwCameraViewWorksCrl.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -198,7 +199,9 @@
     <ClCompile Include="CwBirgerMount.cpp" />
     <ClCompile Include="CwCameraMarster.cpp" />
     <ClCompile Include="CwCameraMarsterDlg.cpp" />
+    <ClCompile Include="CwCameraViewWorksCrl.cpp" />
     <ClCompile Include="CwSerialPort.cpp" />
+    <ClCompile Include="EnumSerial.cpp" />
     <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
